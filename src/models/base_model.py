@@ -1,12 +1,8 @@
-from typing import Optional
-from sqlalchemy import Column, Integer, DateTime
-from sqlalchemy.orm import Mapped, DeclarativeBase
-from sqlalchemy.orm import mapped_column, declarative_base
-from sqlalchemy.sql import func, text
-from sqlalchemy.schema import FetchedValue
-from sqlalchemy.types import TIMESTAMP, DateTime
+from sqlalchemy import Integer, DateTime
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.types import DateTime
 from datetime import datetime, UTC
-from pydantic import BaseModel
 
 class Base(DeclarativeBase):
   pass
