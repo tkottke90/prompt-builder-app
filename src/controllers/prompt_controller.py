@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 from src.dao import prompt_dao
-from src.models.prompt_model import CreatePromptDTO, PromptDTO
+from src.models.prompt_model import CreatePromptDTO, PromptDTO, UpdatePromptDTO
 from src.models.query_params import DateFieldQueryModel, StringFieldQueryModel
 from src.utils import sqlalchemy_query, string_util
 from src.utils.hateos_util import hateosParentPopulator, hateosSelfPopulator
@@ -40,7 +40,7 @@ def find(
     raise HTTPException(400, 'BadRequest: Query Exceeded the number of items')
 
 @router.patch('/{prompt_id}')
-def update(prompt_id: int, prompt: CreatePromptDTO):
+def update(prompt_id: int, prompt: UpdatePromptDTO):
   return promptsPopulator(prompt_dao.updatePrompt(prompt_id, prompt))
 
 @router.delete('/{prompt_id}', status_code=203)
