@@ -1,22 +1,12 @@
 import src.database as database
-from src.models.prompt_model import CreatePromptDTO, PromptTable, PromptDTO, PromptQuery
+from src.models import prompt_model
+from src.models.prompt_model import CreatePromptDTO, PromptTable, PromptQuery
 from datetime import datetime, UTC
-from typing import List
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.utils import sqlalchemy_query
 from src.models.base_model import Base_Table
 from fastapi.encoders import jsonable_encoder
-
-def toDTO(table: PromptTable) -> PromptDTO:
-  return {
-    "id": table.id,
-    "value": table.value,
-    "label": table.label,
-    "tags": table.tags.split(',') if table.tags is not None else [],
-    "createdAt": table.createdAt,
-    "updatedAt": table.updatedAt
-  }
 
 def getRowByPrimaryId(session: Session, table: Base_Table, recordId: int):
   row = session.get(table, recordId)
@@ -41,7 +31,7 @@ def createPrompt(createInput: CreatePromptDTO, *, session: Session):
   session.add(newRecord)
   session.flush()
 
-  return toDTO(newRecord)
+  return newRecord.toDTO()
 
 @database.transaction()
 def deletePrompt(id: int, *, session: Session):
@@ -57,22 +47,18 @@ def findPrompt(filterParameters: PromptQuery, *, skip: int, limit: int, session:
     query = sqlalchemy_query.stringQueryBuilder(query, PromptTable.value, filterParameters.get('value')) 
 
   return {
-    "prompts": [ toDTO(prompt) for prompt in session.scalars(query.limit(limit).offset(skip)).fetchmany() ],
+    "prompts": [ prompt.toDTO() for prompt in session.scalars(query.limit(limit).offset(skip)).fetchmany() ],
     "paging": sqlalchemy_query.calculatePagination(session, query, skip, limit)
   }
 
 @database.transaction()
-def updatePrompt(id: int, createInput: CreatePromptDTO, *, session: Session):
+def updatePrompt(id: int, dto: prompt_model.UpdatePromptDTO, *, session: Session):
   prompt = getPromptByID(session, id)
-
-  lockedKeys = [ "id", "createdAt", "updatedAt" ]
-  for key,value in createInput.__dict__.items():
-    if key not in lockedKeys and value is not None:
-      setattr(prompt, key, value)
+  prompt.toPersistance(dto)
 
   session.flush()
 
-  return toDTO(prompt)
+  return prompt_model.toDTO(prompt)
 
 @database.transaction()
 def addVersion(promptId: int, version, *, session: Session):

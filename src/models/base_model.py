@@ -15,6 +15,16 @@ class Base_Table(Base):
   createdAt = mapped_column(DateTime(), default=lambda _: datetime.now(UTC)) 
   updatedAt = mapped_column(DateTime(), default=datetime.now(UTC), onupdate=lambda _: datetime.now(UTC))
 
+  def toPersistance(self, dto: BaseModel):
+    def filterFn(member: str):
+      lockedKeys = [ "id", "createdAt", "updatedAt", "metadata", "registry" ]
+
+      return not (member.startswith("__") or member in lockedKeys)
+
+    for key in filter(filterFn, dto.__dict__.keys()):
+      if (key in self and getattr(dto, key) is not None):
+        setattr(self, key, getattr(dto, key))
+
 class Base_DTO(BaseModel):
   id: int
   createdAt: str

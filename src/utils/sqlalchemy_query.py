@@ -54,7 +54,7 @@ def getCountQuery(subQuery):
 def calculatePagination(session: Session, subQuery, skip: int, limit: int):
   count = session.execute(getCountQuery(subQuery)).scalar_one()
 
-  if (skip >= count):
+  if (skip > count):
     raise IndexOutOfBoundsError(skip, count)
 
   return {

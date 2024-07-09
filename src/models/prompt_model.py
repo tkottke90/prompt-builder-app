@@ -1,13 +1,21 @@
 import datetime
+from fastapi.encoders import jsonable_encoder
 from src.models.base_model import Base_Table, Base_DTO
-from sqlalchemy import DateTime, ForeignKey, String, Integer
+from sqlalchemy import Column, DateTime, ForeignKey, String, Integer, Table
 from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.orm import Mapped
 from pydantic import BaseModel
 from typing import List, Optional
 from src.models import query_params
+import inspect
 
-PVT = "PromptTableVersion"
+
+association_table = Table(
+    "prompt_versions",
+    Base_Table.metadata,
+    Column("promptId", ForeignKey("prompts.id"), primary_key=True),
+    Column("versionId", ForeignKey("version.id"), primary_key=True),
+)
 
 class PromptTable(Base_Table):
   __tablename__ = "prompts"
@@ -15,18 +23,36 @@ class PromptTable(Base_Table):
   value = mapped_column(String, nullable=False)
   label = mapped_column(String, nullable=False, index=True)
   tags = mapped_column(String, default="")
-  versions: Mapped[List["PromptVersionTable"]] = relationship(back_populates="parent", cascade="all, delete-orphan")
+  versions: Mapped[List["PromptVersionTable"]] = relationship(secondary=association_table)
+
+  def toDTO(self):
+    return {
+      "id": self.id,
+      "value": self.value,
+      "label": self.label,
+      "tags": self.tags.split(',') if self.tags is not None else [],
+      "createdAt": self.createdAt,
+      "updatedAt": self.updatedAt
+    }
 
 
 class PromptVersionTable(Base_Table):
-  __tablename__ = "prompt_version"
+  __tablename__ = "version"
 
-  parent = relationship("PromptTable", back_populates="versions")
   index = mapped_column(Integer, default=-1, nullable=False)
   
-  parentId: Mapped[int] = mapped_column(ForeignKey("prompts.id"))
   prompt = mapped_column(String, nullable=False, index=True)
   comments = mapped_column(String, default="", nullable=False)
+
+  def toDTO(self):
+    return {
+      "id": self.id,
+      "index": self.index,
+      "prompt": self.prompt,
+      "comments": self.comments,
+      "createdAt": self.createdAt,
+      "updatedAt": self.updatedAt
+    }
 
 ##### DTOs #####
 
