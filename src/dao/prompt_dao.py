@@ -4,17 +4,17 @@ from src.models.prompt_model import CreatePromptDTO, PromptTable, PromptQuery
 from datetime import datetime, UTC
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from src.utils import sqlalchemy_query
-from src.models.base_model import Base_Table
+from src.utils import sqlalchemy_query, string_util
 from fastapi.encoders import jsonable_encoder
+from datetime import datetime
 
-def getRowByPrimaryId(session: Session, table: Base_Table, recordId: int):
-  row = session.get(table, recordId)
+class ValueHasNoChangeError(Exception):
+  def __init__(self, message, *args: object) -> None:
+    self.message = f'ValueHasNoChangeError: {message}'
+    super().__init__(self.message, *args)
 
-  if (row is None):
-    raise ValueError('Item not found')
-
-  return row
+def getRowByPrimaryId(session: Session, recordId: int):
+  return sqlalchemy_query.getRowByPrimaryId(session, prompt_model, recordId)
 
 def getPromptByID(session: Session, id: int):
   prompt = session.get(PromptTable, id);
@@ -26,7 +26,21 @@ def getPromptByID(session: Session, id: int):
 
 @database.transaction()
 def createPrompt(createInput: CreatePromptDTO, *, session: Session):
-  newRecord = PromptTable(**jsonable_encoder(createInput), createdAt=datetime.now(UTC), updatedAt=datetime.now(UTC))
+  createInput.tags = ','.join(createInput.tags) if 'tags' in createInput else ''
+  newRecord = PromptTable(
+    **jsonable_encoder(createInput),
+    createdAt=datetime.now(UTC),
+    updatedAt=datetime.now(UTC),
+    versions=[
+      prompt_model.PromptVersionTable(
+        index=1,
+        prompt=createInput.value,
+        comments="",
+        createdAt=datetime.now(UTC),
+        updatedAt=datetime.now(UTC),
+      )
+    ]
+  )
 
   session.add(newRecord)
   session.flush()
@@ -41,7 +55,7 @@ def deletePrompt(id: int, *, session: Session):
 
 @database.transaction()
 def findPrompt(filterParameters: PromptQuery, *, skip: int, limit: int, session: Session):
-  query = select(PromptTable) 
+  query = select(PromptTable)
 
   if ('value' in filterParameters):
     query = sqlalchemy_query.stringQueryBuilder(query, PromptTable.value, filterParameters.get('value')) 
@@ -58,16 +72,43 @@ def updatePrompt(id: int, dto: prompt_model.UpdatePromptDTO, *, session: Session
 
   session.flush()
 
-  return prompt_model.toDTO(prompt)
+  return prompt.toDTO()
 
 @database.transaction()
-def addVersion(promptId: int, version, *, session: Session):
+def addVersionCommit(promptId: int, *, session: Session):
+  prompt = getPromptByID(session, promptId)
+  currentVersion = prompt.versions[-1]
+  
+  promptValueChecksum = string_util.checksum(prompt.value)
+  currentVersionChecksum = string_util.checksum(currentVersion.prompt)
+
+  if (promptValueChecksum == currentVersionChecksum):
+    raise ValueHasNoChangeError('Prompt has not been changed from previous versions')
+
+  newVersion = prompt_model.PromptVersionTable(
+    index = string_util.checksum(prompt.value),
+    previous = currentVersion.index,
+    prompt = prompt.value
+  )
+
+  currentUpdates = prompt_model.UpdatePromptVersionDTO(
+    next=newVersion.index,
+  )
+  
+  currentVersion.toPersistance(currentUpdates)
+
+  session.flush()
   pass
 
 @database.transaction()
-def deleteVersion(versionId: int, *, session: Session):
+def updateCurrentVersion(versionId: str, data: prompt_model.UpdatePromptVersionDTO, *, session: Session):
+
   pass
 
 @database.transaction()
-def updateVersion(versionId: int, *, session: Session):
+def revertToVersion(versionId: str, targetId: str, *, session: Session):
+  pass
+
+@database.transaction()
+def createNewPromptFromVersion(versionId: str, targetId: str, *, session: Session):
   pass

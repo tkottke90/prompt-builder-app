@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 from src.dao import prompt_dao
-from src.models.prompt_model import CreatePromptDTO, PromptDTO, UpdatePromptDTO
+from src.models.prompt_model import CreatePromptDTO, PromptDTO, UpdatePromptDTO, UpdatePromptVersionDTO
 from src.models.query_params import DateFieldQueryModel, StringFieldQueryModel
 from src.utils import sqlalchemy_query, string_util
 from src.utils.hateos_util import hateosParentPopulator, hateosSelfPopulator
@@ -18,7 +18,6 @@ def promptsPopulator(data: PromptDTO):
 def create(prompt: CreatePromptDTO):
   return promptsPopulator(prompt_dao.createPrompt(prompt))
   
-
 @router.get('/')
 def find(
   request: Request,
@@ -46,3 +45,16 @@ def update(prompt_id: int, prompt: UpdatePromptDTO):
 @router.delete('/{prompt_id}', status_code=203)
 def remove(prompt_id: int):
   prompt_dao.deletePrompt(prompt_id)
+
+@router.post('/{prompt_id}/version/commit')
+def createRouterCommit(promptId: int):
+  try:
+    return prompt_dao.addVersionCommit(promptId)
+  except prompt_dao.ValueHasNoChangeError as valueError:
+    raise HTTPException(status_code=400, detail=valueError.message)
+  except Exception as e:
+    print(e)
+
+@router.patch('/{prompt_id}/version/{version_id}')
+def updateCurrentVersion(prompt_id: int, version_id: str, data: UpdatePromptVersionDTO):
+  return prompt_dao.updateCurrentVersion(version_id, data)

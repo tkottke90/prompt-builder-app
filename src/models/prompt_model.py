@@ -7,8 +7,7 @@ from sqlalchemy.orm import Mapped
 from pydantic import BaseModel
 from typing import List, Optional
 from src.models import query_params
-import inspect
-
+from src.utils import string_util
 
 association_table = Table(
     "prompt_versions",
@@ -26,20 +25,30 @@ class PromptTable(Base_Table):
   versions: Mapped[List["PromptVersionTable"]] = relationship(secondary=association_table)
 
   def toDTO(self):
+    versions = self.versions
+    current = string_util.checksum(self.value)
+    last = string_util.checksum(versions[-1].prompt)
+
+    versionDTOs = [ version.toDTO() for version in versions ]
+
     return {
       "id": self.id,
       "value": self.value,
       "label": self.label,
       "tags": self.tags.split(',') if self.tags is not None else [],
       "createdAt": self.createdAt,
-      "updatedAt": self.updatedAt
+      "updatedAt": self.updatedAt,
+      "versions": versionDTOs[-5 if len(versions) > 5 else -1 * len(versions)::],
+      "hasChanges": current != last
     }
 
 
 class PromptVersionTable(Base_Table):
   __tablename__ = "version"
 
-  index = mapped_column(Integer, default=-1, nullable=False)
+  index = mapped_column(String, nullable=False)
+  previous = mapped_column(String, nullable=True)
+  next = mapped_column(String, nullable=True)
   
   prompt = mapped_column(String, nullable=False, index=True)
   comments = mapped_column(String, default="", nullable=False)
@@ -76,3 +85,9 @@ class PromptQuery(BaseModel):
   createdAt: Optional[str | query_params.DateFieldQueryModel] = None
   updatedAt: Optional[str | query_params.DateFieldQueryModel] = None
   deletedAt: Optional[str | query_params.DateFieldQueryModel] = None
+
+class UpdatePromptVersionDTO(BaseModel):
+  prompt: Optional[str] = None
+  previous: Optional[str] = None
+  next: Optional[str] = None
+  comments: Optional[str] = None

@@ -22,7 +22,7 @@ class Base_Table(Base):
       return not (member.startswith("__") or member in lockedKeys)
 
     for key in filter(filterFn, dto.__dict__.keys()):
-      if (key in self and getattr(dto, key) is not None):
+      if (key in self.__dict__ and getattr(dto, key) is not None):
         setattr(self, key, getattr(dto, key))
 
 class Base_DTO(BaseModel):

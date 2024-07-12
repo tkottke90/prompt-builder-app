@@ -3,6 +3,7 @@ import re
 from math import ceil
 from sqlalchemy import Select, Tuple, select, func
 from sqlalchemy.orm import Query, InstrumentedAttribute, Session, FromStatement
+from src.models.base_model import Base_Table
 from src.models.query_params import StringFieldQueryModel
 from src.utils.string_util import caseInsensitiveMatch
 
@@ -11,6 +12,39 @@ class IndexOutOfBoundsError(Exception):
     super().__init__(f"Index [{index}] is outside the upper bounds [{upperBound}]")
 
 NESTED_QUERY_REGEX = re.compile(r'(^(\w+)(?:\[(\w+)\]))', re.DOTALL)
+
+def calculatePagination(session: Session, subQuery, skip: int, limit: int):
+  count = session.execute(getCountQuery(subQuery)).scalar_one()
+
+  if (skip > count):
+    raise IndexOutOfBoundsError(skip, count)
+
+  return {
+    "total": ceil(count / limit),
+    "current": ceil(skip / limit) if (skip > 0) else 1,
+    "next": {
+      "skip": skip + limit if (skip + limit) <= count else -1,
+      "limit": limit
+    },
+    "previous": {
+      "skip": skip - limit if (skip - limit) >= 0 else -1,
+      "limit": limit
+    }
+  }
+
+def getCountQuery(index: InstrumentedAttribute):
+  return select(func.count()).select_from(select(index).subquery())
+
+def getCountQuery(subQuery):
+  return select(func.count()).select_from(subQuery)
+
+def getRowByPrimaryId(session: Session, table: Base_Table, recordId: int):
+  row = session.get(table, recordId)
+
+  if (row is None):
+    raise ValueError('Item not found')
+
+  return row
 
 def parseQueryKey(key: str, value, target: dict):
   _key = str(key)
@@ -34,7 +68,6 @@ def parseQueryKey(key: str, value, target: dict):
     
   return target
 
-
 def parseQueryParamsToDict(query_params: dict):
   queryDict = {}
 
@@ -44,31 +77,6 @@ def parseQueryParamsToDict(query_params: dict):
     queryDict.update(keyDetails)
 
   return queryDict
-
-def getCountQuery(index: InstrumentedAttribute):
-  return select(func.count()).select_from(select(index).subquery())
-
-def getCountQuery(subQuery):
-  return select(func.count()).select_from(subQuery)
-
-def calculatePagination(session: Session, subQuery, skip: int, limit: int):
-  count = session.execute(getCountQuery(subQuery)).scalar_one()
-
-  if (skip > count):
-    raise IndexOutOfBoundsError(skip, count)
-
-  return {
-    "total": ceil(count / limit),
-    "current": ceil(skip / limit) if (skip > 0) else 1,
-    "next": {
-      "skip": skip + limit if (skip + limit) <= count else -1,
-      "limit": limit
-    },
-    "previous": {
-      "skip": skip - limit if (skip - limit) >= 0 else -1,
-      "limit": limit
-    }
-  }
 
 def stringQueryBuilder(query: Query, key: InstrumentedAttribute, filter: StringFieldQueryModel):
   if isinstance(filter, str) or 'eq' in filter:
