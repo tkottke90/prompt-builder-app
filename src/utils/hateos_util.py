@@ -8,7 +8,7 @@ Mapping = Dict[str, MappingAction]
 def metadataPopulator(data: T, mapping: Mapping):
   def executeAction(data: T, action: MappingAction):
     if (isinstance(action, str)):
-      return getattr(data, action, '')
+      return action
     else:
       return action(data)
 
@@ -20,11 +20,11 @@ def metadataPopulator(data: T, mapping: Mapping):
   return data
 
 
-def hateosSelfPopulator(data: T, rootPath: str):
+def hateosSelfPopulator(data: T, rootPath: str, key: str = 'id'):
   return metadataPopulator(
     data,
     {
-      "self": lambda record: f"{rootPath}/{record.get('id')}"
+      "self": lambda record: f"{rootPath}/{record.get(key)}"
     }
   )
 

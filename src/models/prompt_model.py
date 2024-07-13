@@ -1,13 +1,49 @@
-import datetime
-from fastapi.encoders import jsonable_encoder
 from src.models.base_model import Base_Table, Base_DTO
-from sqlalchemy import Column, DateTime, ForeignKey, String, Integer, Table
+from sqlalchemy import Column, ForeignKey, String, Table
 from sqlalchemy.orm import relationship, mapped_column
 from sqlalchemy.orm import Mapped
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Callable
 from src.models import query_params
 from src.utils import string_util
+
+##### DTOs #####
+
+class CreatePromptDTO(BaseModel):
+  label: str
+  value: str
+  tags: Optional[list[str]] = None
+
+class UpdatePromptDTO(CreatePromptDTO):
+  label: Optional[str] = None
+  value: Optional[str] = None
+  tags: Optional[list[str]] = None
+
+
+
+class PromptQuery(BaseModel):
+  value: Optional[str | query_params.StringFieldQueryModel] = None
+  label: Optional[str | query_params.StringFieldQueryModel] = None
+  value: Optional[str | query_params.StringFieldQueryModel] = None
+  createdAt: Optional[str | query_params.DateFieldQueryModel] = None
+  updatedAt: Optional[str | query_params.DateFieldQueryModel] = None
+  deletedAt: Optional[str | query_params.DateFieldQueryModel] = None
+
+class PromptVersionDTO(Base_DTO):
+  prompt: str
+  previous: str
+  next: str
+  comments: str
+
+class UpdatePromptVersionDTO(BaseModel):
+  prompt: Optional[str] = None
+  previous: Optional[str] = None
+  next: Optional[str] = None
+  comments: Optional[str] = None
+
+class PromptDTO(Base_DTO, CreatePromptDTO):
+  versions: list[PromptVersionDTO]
+  deletedAt: str
 
 association_table = Table(
     "prompt_versions",
@@ -59,35 +95,8 @@ class PromptVersionTable(Base_Table):
       "index": self.index,
       "prompt": self.prompt,
       "comments": self.comments,
+      "previous": self.previous,
+      "next": self.next,
       "createdAt": self.createdAt,
       "updatedAt": self.updatedAt
     }
-
-##### DTOs #####
-
-class CreatePromptDTO(BaseModel):
-  label: str
-  value: str
-  tags: Optional[list[str]] = None
-
-class UpdatePromptDTO(CreatePromptDTO):
-  label: Optional[str] = None
-  value: Optional[str] = None
-  tags: Optional[list[str]] = None
-
-class PromptDTO(Base_DTO, CreatePromptDTO):
-  deletedAt: str
-
-class PromptQuery(BaseModel):
-  value: Optional[str | query_params.StringFieldQueryModel] = None
-  label: Optional[str | query_params.StringFieldQueryModel] = None
-  value: Optional[str | query_params.StringFieldQueryModel] = None
-  createdAt: Optional[str | query_params.DateFieldQueryModel] = None
-  updatedAt: Optional[str | query_params.DateFieldQueryModel] = None
-  deletedAt: Optional[str | query_params.DateFieldQueryModel] = None
-
-class UpdatePromptVersionDTO(BaseModel):
-  prompt: Optional[str] = None
-  previous: Optional[str] = None
-  next: Optional[str] = None
-  comments: Optional[str] = None

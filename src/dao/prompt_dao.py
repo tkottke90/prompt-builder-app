@@ -11,7 +11,12 @@ from datetime import datetime
 class ValueHasNoChangeError(Exception):
   def __init__(self, message, *args: object) -> None:
     self.message = f'ValueHasNoChangeError: {message}'
-    super().__init__(self.message, *args)
+
+    self.detail = {
+      "name": "PromptHasNoChangeError",
+      "description": "Prompt matches current version.  Make changes to the prompt before adding a version"
+    }
+    super().__init__(self.detail, self.message, *args)
 
 def getRowByPrimaryId(session: Session, recordId: int):
   return sqlalchemy_query.getRowByPrimaryId(session, prompt_model, recordId)
@@ -33,7 +38,7 @@ def createPrompt(createInput: CreatePromptDTO, *, session: Session):
     updatedAt=datetime.now(UTC),
     versions=[
       prompt_model.PromptVersionTable(
-        index=1,
+        index=string_util.checksum(createInput.value),
         prompt=createInput.value,
         comments="",
         createdAt=datetime.now(UTC),
@@ -96,19 +101,7 @@ def addVersionCommit(promptId: int, *, session: Session):
   )
   
   currentVersion.toPersistance(currentUpdates)
-
+  prompt.versions.append(newVersion)
   session.flush()
-  pass
-
-@database.transaction()
-def updateCurrentVersion(versionId: str, data: prompt_model.UpdatePromptVersionDTO, *, session: Session):
-
-  pass
-
-@database.transaction()
-def revertToVersion(versionId: str, targetId: str, *, session: Session):
-  pass
-
-@database.transaction()
-def createNewPromptFromVersion(versionId: str, targetId: str, *, session: Session):
-  pass
+  
+  return prompt.toDTO()
