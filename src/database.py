@@ -1,12 +1,15 @@
 from typing import Any, Callable
-from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 from src.models.base_model import Base
 import src.models
+import os
 
 QueryFn = Callable[[Session], Any]
 
-engine = create_engine("sqlite:///var/ai-api", echo=True, logging_name="database")
+showQueryLogs = 'mode' in os.environ and os.environ['mode'] != "production"
+
+engine = create_engine("sqlite:///var/ai-api", echo=showQueryLogs, logging_name="database")
 
 def initialize():
   Base.metadata.create_all(bind=engine)

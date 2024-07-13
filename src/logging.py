@@ -2,12 +2,15 @@ import queue
 import logging
 from logging.config import dictConfig
 import logging.handlers
+import os
 
 logger = logging.getLogger('AI App')
 
+isProduction = 'mode' in os.environ and os.environ['mode'] == 'production'
+
 config = {
   "version": 1,
-  "disable_existing_loggers": False,
+  "disable_existing_loggers": isProduction,
   "formatters": {
     "simple": {
       "format": "%(asctime)s | %(levelname)s | %{message}s"

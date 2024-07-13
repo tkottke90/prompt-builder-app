@@ -36,6 +36,7 @@ def addHatos(data: List[PromptDTO]):
 
 @router.post('/', status_code=201)
 def create(prompt: CreatePromptDTO):
+  controllerLogger.debug('Creating New Prompt', extra=prompt)
   return addHatos([prompt_dao.createPrompt(prompt)]).pop()
   
 @router.get('/')
