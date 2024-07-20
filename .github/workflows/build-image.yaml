@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      REGISTRY: registry.tdkottke.com
 
     steps:
       - uses: actions/checkout@v4
@@ -15,12 +17,16 @@ jobs:
       - name: Login to registry
         uses: docker/login-action@v3
         with:
-          registry: registry.tdkottke.com
+          registry: ${{ env.REGISTRY }}
           username: github-deployment
           password: ${{ secrets.DOCKER_CLIENT_SECRET }}
 
       - name: Build Docker Image
-        run: docker build -t registry.tdkottke.com/tkottke90/ai-assistant-api:${{github.ref_name}} .
+        env:
+          IMAGE: ${{ env.REGISTRY }}/tkottke90/ai-assistant-api:${{github.ref_name}}
+        run: docker build -t ${{ env.IMAGE }} .
 
       - name: Push To Registry
-        run: docker push registry.tdkottke.com/tkottke90/ai-assistant-api:${{github.ref_name}}
+        env:
+          IMAGE: ${{ env.REGISTRY }}/tkottke90/ai-assistant-api:${{github.ref_name}}
+        run: docker push ${{ env.IMAGE }}
