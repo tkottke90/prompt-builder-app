@@ -21,3 +21,6 @@ jobs:
 
       - name: Build Docker Image
         run: docker build -t registry.tdkottke.com/tkottke90/ai-assistant-api:${{github.ref_name}} .
+
+      - name: Push To Registry
+        run: docker push registry.tdkottke.com/tkottke90/ai-assistant-api:${{github.ref_name}}
