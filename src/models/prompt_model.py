@@ -77,6 +77,13 @@ class PromptTable(Base_Table):
       "versions": versionDTOs[-5 if len(versions) > 5 else -1 * len(versions)::],
       "hasChanges": current != last
     }
+  
+  def toPersistance(self, dto: PromptDTO):
+    if (dto.tags is not None):
+      self.tags = ','.join(dto.tags)
+      dto.tags = None
+
+    super().toPersistance(dto)
 
 
 class PromptVersionTable(Base_Table):
