@@ -17,4 +17,4 @@ COPY ./src ./src
 ENV mode=production
 
 EXPOSE 80
-CMD ["fastapi", "run", "main.py", "--port", "80"]
+CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "80"]
