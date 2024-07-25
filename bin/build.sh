@@ -8,7 +8,7 @@ REPOSITORY="tkottke"
 TAG=""
 VERBOSE=0
 
-while getopts ":vsrtu:" opt; do
+while getopts ":vs:r:t:u:" opt; do
   case $opt in
     r) REGISTRY="$OPTARG" ;;
     s) SKIP=1 ;;
@@ -55,8 +55,11 @@ log "Created Latest Image: $IMAGE"
 buildAndPush $IMAGE
 
 # Check if TAG is an empty string and prompt user for a tag
-if [[ -z $TAG ]]; then
+if [[ -n "$TAG" ]]; then
   TAG_IMAGE="$REGISTRY/$REPOSITORY/$APP_NAME:$TAG"
-  
+  log "Created Tagged Image: $TAG_IMAGE"
+
   buildAndPush $TAG_IMAGE
-if
+fi
+
+log "Complete"
