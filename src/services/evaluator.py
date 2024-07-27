@@ -1,4 +1,3 @@
-from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 import re
 
