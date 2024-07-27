@@ -59,6 +59,10 @@ def deletePrompt(id: int, *, session: Session):
   session.delete(prompt)
 
 @database.transaction()
+def getPrompt(id: int, *, session: Session):
+  return getPromptByID(session, id)
+
+@database.transaction()
 def findPrompt(filterParameters: PromptQuery, *, skip: int, limit: int, session: Session):
   query = select(PromptTable)
 

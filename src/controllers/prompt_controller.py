@@ -4,6 +4,7 @@ from src.models.prompt_model import CreatePromptDTO, PromptDTO, UpdatePromptDTO,
 from src.models.query_params import DateFieldQueryModel, StringFieldQueryModel
 from src.utils import sqlalchemy_query, string_util, hateos_util
 from typing import List
+from src.services import evaluator
 import logging
 
 controllerLogger = logging.getLogger('Controllers.PromptController')
@@ -84,3 +85,17 @@ def createRouterCommit(promptId: int):
     controllerLogger.error(f'Prompt commit rejected - {type(e)}', extra={ "promptId": promptId, "rootError": indexError.__repr__() })
     raise HTTPException(status_code=404, detail="Not Found")
  
+@router.get('/{promptId}/evaluator/inputs')
+def getPromptInputs(promptId: int):
+  try:
+    prompt = prompt_dao.getPrompt(promptId)
+
+    return evaluator.getPromptInputs(prompt.value)
+
+  except IndexError as indexError:
+    print(indexError)
+    controllerLogger.error('Prompt commit rejected - no changes detected', extra={ "promptId": promptId, "rootError": indexError.__repr__() })
+    raise HTTPException(status_code=404, detail="Not Found")
+  except Exception as e:
+    controllerLogger.error(f'Prompt commit rejected - {type(e)}', extra={ "promptId": promptId, "rootError": e.__repr__() })
+    raise HTTPException(status_code=404, detail="Not Found")
