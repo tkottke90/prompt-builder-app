@@ -7,7 +7,7 @@ import logging
 initializeLogger()
 appLogger = logging.getLogger('app')
 
-def main():
+def main(app: FastAPI):
   database.initialize()
 
   app.include_router(root.router)
@@ -17,6 +17,9 @@ if __name__ == "__main__":
   appLogger.error('Error: Whoops! Seems like you ran this with Python.  Use the fastapi cli to start: fastapi dev main.py')
   exit(1)
 
-app = FastAPI()
+app = FastAPI(
+  title="AI Assistant API",
+  description="REST API to interact with Large Language Models using prompts.  This application is used both to develop the prompts."
+)
 if __name__ == "main":
-  main()
+  main(app)
