@@ -38,7 +38,7 @@ config = {
       "level": "DEBUG",
       "formatter": "json",
       "filename": "var/log/app.jsonl",
-      "maxBytes": 1024 * 5,
+      "maxBytes": 1024 * 100,
       "backupCount": 3
     },
     "error-file": {
