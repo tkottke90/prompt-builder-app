@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.utils import sqlalchemy_query, string_util
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
+from src.exceptions import entity
 
 class ValueHasNoChangeError(Exception):
   def __init__(self, message, *args: object) -> None:
@@ -22,10 +23,10 @@ def getRowByPrimaryId(session: Session, recordId: int):
   return sqlalchemy_query.getRowByPrimaryId(session, prompt_model, recordId)
 
 def getPromptByID(session: Session, id: int):
-  prompt = session.get(PromptTable, id);
+  prompt = session.get(prompt_model.PromptTable, id);
 
   if (prompt is None):
-    raise IndexError(f'Prompt with ID [id={id}] not found in database')
+    raise entity.EntityNotFoundError(id=id)
   
   return prompt
 
@@ -60,7 +61,7 @@ def deletePrompt(id: int, *, session: Session):
 
 @database.transaction()
 def getPrompt(id: int, *, session: Session):
-  return getPromptByID(session, id)
+  return getPromptByID(session, id).toDTO()
 
 @database.transaction()
 def findPrompt(filterParameters: PromptQuery, *, skip: int, limit: int, session: Session):
@@ -92,7 +93,11 @@ def addVersionCommit(promptId: int, *, session: Session):
   currentVersionChecksum = string_util.checksum(currentVersion.prompt)
 
   if (promptValueChecksum == currentVersionChecksum):
-    raise ValueHasNoChangeError('Prompt has not been changed from previous versions')
+    raise entity.EntityHasNoChanges(
+      entityName=prompt_model.PromptTable.__name__,
+      entityId=promptId,
+      message="new prompt version matches previous version"
+    )
 
   newVersion = prompt_model.PromptVersionTable(
     index = string_util.checksum(prompt.value),

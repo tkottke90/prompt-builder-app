@@ -3,6 +3,7 @@ from langchain_community.chat_models.ollama import ChatOllama
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from pydantic import BaseModel, Field
 from src.models.prompt_model import PromptDTO
+from src.exceptions import api_input
 from typing import Any
 import json
 import logging
@@ -14,7 +15,12 @@ EvaluatorLogger = logging.getLogger('Evaluator')
 
 testllm = ChatOllama(
   model="mistral:7b",
-  temperature=0.1,
+  temperature=0.1
+)
+
+scoreLLM = ChatOllama(
+  model="mistral:7b",
+  temperature=0.0,
   format="json"
 )
 
@@ -22,13 +28,22 @@ class PromptArgument(BaseModel):
   label: str = Field()
   formatting: str = Field()
 
+def validatePromptInput(prompt: ChatPromptTemplate, input: dict):
+  "Validates that a input dict contains all of the required string formatting keys"
+  missing = [ inputVar for inputVar in prompt.input_variables if inputVar not in input ]
+
+  if (len(missing) > 0):
+    raise api_input.MissingInputError(
+      expected=prompt.input_variables,
+      missing=missing
+    ) 
+
 def scoreGeneration(prompt: str, generation: str):
   template = ChatPromptTemplate.from_template(
     partial_variables={
       "format_instructions": StructuredOutputParser.from_response_schemas([
         ResponseSchema(name="score", description="a grading between 0 and 10 of how well the template performed", type="float"),
-        ResponseSchema(name="suggestions", description="a list of 5 adjustments to the template which could improve outcomes", type="list[str]"),
-        ResponseSchema(name="questions", description="a list of questions for the user about the template", type="list[str]")
+        ResponseSchema(name="score_explanation", description="a description of why the response received that score"),
       ])
     },
     template=
@@ -42,36 +57,42 @@ You should respond using the following format:
 
 {format_instructions}
 
-## Prompt Template
+## LLM Prompt Template
 {template}
 
-## Generated Response
+## LLM Response
 {generation}
 
 # Program
-1. generate a grading between 0 and 10 of how well the Generated Response responded to the Prompt Template
-2. generate 5 suggested adjustments to try which would improve the outcome
-3. generate 5 questions about the Prompt Template that would help you generate suggestions
+1. generate a score between 0 and 10 of how well the Generated Response responded to the Prompt Template
+2. explain why this score was given based on your analysis 
 """)
-  
-  chain = template | testllm
+
+  chain = template | scoreLLM
+
+  EvaluatorLogger.info(msg=f'Starting test for prompt')
 
   result = chain.invoke(input={ "template": prompt, "generation": generation })
   data = json.loads(result.content)
 
   return {
     "score": data.get('score', -1),
-    "suggestions": data.get('suggestions', []),
-    "questions": data.get('questions', [])
+    "score_explanation": data.get('score_explanation', 'Missing Explanation')
   }
 
 def testPrompt(prompt: PromptDTO, args: list[Any], kwargs: dict[str, Any]):
   """
   Call LLM using a provided prompt and return the results of that prompt
   """
-  EvaluatorLogger.info(msg=f'Starting test for prompt: {prompt.id}', extra={ "inputs": kwargs })
+  fnLogger = EvaluatorLogger.getChild('testPrompt')
+
+  fnLogger.info(msg=f'Starting test for prompt: {prompt.id}', extra={ "inputs": kwargs })
 
   template = ChatPromptTemplate.from_template(template=prompt.value)
+  fnLogger.debug('Validating Input', extra={ "keys": template.input_variables })
+
+  validatePromptInput(template, kwargs)
+
   chain = template | testllm
 
   result = chain.invoke(input=kwargs)
@@ -79,7 +100,6 @@ def testPrompt(prompt: PromptDTO, args: list[Any], kwargs: dict[str, Any]):
   EvaluatorLogger.info(msg=f'Test complete', extra={ "run_id": result.id, "response": result })
 
   return (result.content, template.format(**kwargs))
-
 
 def getPromptInputs(prompt: PromptDTO):
   """

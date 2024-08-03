@@ -8,6 +8,8 @@ from src.services import evaluator
 from typing import List
 import logging
 import traceback
+import sys
+import json
 
 controllerLogger = logging.getLogger('Controllers.PromptController')
 
@@ -78,51 +80,26 @@ def update(prompt_id: int, prompt: UpdatePromptDTO):
 def remove(prompt_id: int):
   prompt_dao.deletePrompt(prompt_id)
 
-@router.post('/{promptId}/version/commit', description="Save the current prompt changes as a version")
+@router.post('/{promptId}/version/commit', name="Commit Prompt Version", description="Save the current prompt changes as a version")
 def createRouterCommit(promptId: int):
-  try:
-    return addHatos([prompt_dao.addVersionCommit(promptId)]).pop()
-  except prompt_dao.ValueHasNoChangeError as valueError:
-    controllerLogger.error('Prompt commit rejected - no changes detected', extra={ "promptId": promptId, "source": "createRouterCommit" })
-    raise HTTPException(status_code=400, detail=valueError.message)
-  except IndexError as indexError:
-    controllerLogger.error('Prompt commit rejected - no changes detected', extra={ "promptId": promptId, "rootError": indexError.__repr__(), "source": "createRouterCommit" })
-    raise HTTPException(status_code=404, detail="Not Found")
-  except Exception as e:
-    controllerLogger.error(f'Prompt commit rejected - {type(e)}', extra={ "promptId": promptId, "rootError": indexError.__repr__(), "source": "createRouterCommit" })
-    raise HTTPException(status_code=404, detail="Not Found")
+  return addHatos([prompt_dao.addVersionCommit(promptId)]).pop()
  
-@router.get('/{promptId}/evaluator/inputs', description="Get a prompt's template inputs")
+@router.get('/{promptId}/evaluator/inputs', name="Commit Prompt Version", description="Get a prompt's template inputs")
 def getPromptInputs(promptId: int):
-  try:
-    prompt = prompt_dao.getPrompt(promptId)
+  prompt = prompt_dao.getPrompt(promptId)
 
-    return evaluator.getPromptInputs(prompt)
-
-  except IndexError as indexError:
-    print(indexError)
-    controllerLogger.error('Prompt commit rejected - no changes detected', extra={ "promptId": promptId, "rootError": indexError.__repr__(), "source": "getPromptInputs" })
-    raise HTTPException(status_code=404, detail="Not Found")
-  except Exception as e:
-    controllerLogger.error(f'Prompt commit rejected - {type(e)}', extra={ "promptId": promptId, "rootError": e.__repr__(), "source": "getPromptInputs" })
-    raise HTTPException(status_code=404, detail="Not Found")
+  return evaluator.getPromptInputs(prompt)
   
 @router.post('/{promptId}/evaluator/test', name="Generate LLM Response from Prompt", description="Execute a prompt with the given input values")
 def getPromptInputs(promptId: int, body: dict):
-  try:
     prompt = prompt_dao.getPrompt(promptId)
 
-    return evaluator.testPrompt(prompt, [], body)
+    (result) = evaluator.testPrompt(prompt, [], body)
 
-  except HTTPException as httpException:
-    raise httpException
-  except Exception as e:
-    controllerLogger.error(f'Prompt commit rejected - {type(e)}', extra={ "promptId": promptId, "rootError": e.__repr__(), "source": "getPromptInputs", "trace": traceback.format_exception(e) })
-    raise HTTPException(status_code=500, detail="Server Error")
+    return result
   
 @router.post('/{promptId}/evaluator/score', name="Score LLM Response", description="Execute an LLM Generation with the given prompt. Then ask the LLM to score the response and provide feedback")
 def getPromptInputs(promptId: int, body: dict):
-  try:
     prompt = prompt_dao.getPrompt(promptId)
 
     (result, template) = evaluator.testPrompt(prompt, [], body)
@@ -132,9 +109,3 @@ def getPromptInputs(promptId: int, body: dict):
       "template": template,
       "score": evaluator.scoreGeneration(template, result)
     }
-
-  except HTTPException as httpException:
-    raise httpException
-  except Exception as e:
-    controllerLogger.error(f'Prompt commit rejected - {type(e)}', extra={ "promptId": promptId, "rootError": e.__repr__(), "source": "getPromptInputs", "trace": traceback.format_exception(e) })
-    raise HTTPException(status_code=500, detail="Server Error")
