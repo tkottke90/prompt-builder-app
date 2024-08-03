@@ -9,16 +9,6 @@ from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from src.exceptions import entity
 
-class ValueHasNoChangeError(Exception):
-  def __init__(self, message, *args: object) -> None:
-    self.message = f'ValueHasNoChangeError: {message}'
-
-    self.detail = {
-      "name": "PromptHasNoChangeError",
-      "description": "Prompt matches current version.  Make changes to the prompt before adding a version"
-    }
-    super().__init__(self.detail, self.message, *args)
-
 def getRowByPrimaryId(session: Session, recordId: int):
   return sqlalchemy_query.getRowByPrimaryId(session, prompt_model, recordId)
 
