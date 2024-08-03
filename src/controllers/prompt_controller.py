@@ -89,20 +89,20 @@ def getPromptInputs(promptId: int):
   
 @router.post('/{promptId}/evaluator/test', name="Generate LLM Response from Prompt", description="Execute a prompt with the given input values")
 def getPromptInputs(promptId: int, body: dict):
-    prompt = prompt_dao.getPrompt(promptId)
+  prompt = prompt_dao.getPrompt(promptId)
 
-    (result) = evaluator.testPrompt(prompt, [], body)
+  (result) = evaluator.testPrompt(prompt, [], body)
 
-    return result
+  return result
   
 @router.post('/{promptId}/evaluator/score', name="Score LLM Response", description="Execute an LLM Generation with the given prompt. Then ask the LLM to score the response and provide feedback")
 def getPromptInputs(promptId: int, body: dict):
-    prompt = prompt_dao.getPrompt(promptId)
+  prompt = prompt_dao.getPrompt(promptId)
 
-    (result, template) = evaluator.testPrompt(prompt, [], body)
+  (result, template) = evaluator.testPrompt(prompt, [], body)
 
-    return {
-      "result": result,
-      "template": template,
-      "score": evaluator.scoreGeneration(template, result)
-    }
+  return {
+    "result": result,
+    "template": template,
+    "score": evaluator.scoreGeneration(template, result)
+  }
