@@ -9,12 +9,13 @@ class EntityException(BaseCustomException):
     self.status_code = status_code
 
 class EntityNotFoundError(EntityException):
-  def __init__(self, id: str | int):
+  def __init__(self, id: str | int, entityKey: str = "entityId"):
     super().__init__(f"entity not found with id: {id}", 404)
     self.entityId = id
+    self.entityKey = entityKey
 
   def getDetails(self) -> dict:
-    return { "entityId": self.entityId }
+    return { self.entityKey: self.entityId }
 
 class EntityAlreadyExistsError(EntityException):
   def __init__(self, id: str | int):
@@ -36,12 +37,13 @@ def handleEntityException(
   req: Request,
   exception: EntityException
 ):
-  logException(exception, { "request_id": req.headers.get('request_id', 'missing') })
+  logException(req, exception)
 
   return JSONResponse(
     status_code=exception.status_code,
     content={
       "error": exception.__class__.__name__,
-      "message": exception.message
+      "message": exception.message,
+      "details": exception.getDetails()
     }
   )

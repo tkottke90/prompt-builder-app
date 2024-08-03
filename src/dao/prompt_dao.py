@@ -26,7 +26,7 @@ def getPromptByID(session: Session, id: int):
   prompt = session.get(prompt_model.PromptTable, id);
 
   if (prompt is None):
-    raise entity.EntityNotFoundError(id=id)
+    raise entity.EntityNotFoundError(id=id, entityKey="prompt_id")
   
   return prompt
 
