@@ -22,6 +22,8 @@ def setupRouters(app: FastAPI):
 
 def main(app: FastAPI):
   database.initialize()
+  setupRouters(app)
+  setupExceptionHandlers(app)
 
 initializeLogger()
 appLogger = logging.getLogger('app')

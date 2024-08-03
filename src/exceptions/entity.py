@@ -1,6 +1,4 @@
-from fastapi import Request
-from fastapi.responses import JSONResponse
-from src.exceptions.base import BaseCustomException
+from src.exceptions.base import BaseCustomException, JSONResponse, Request, logException
 
 class EntityException(BaseCustomException):
   """
@@ -38,6 +36,8 @@ def handleEntityException(
   _: Request,
   exception: EntityException
 ):
+  logException(exception)
+
   return JSONResponse(
     status_code=exception.status_code,
     content={

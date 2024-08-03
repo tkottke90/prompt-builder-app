@@ -86,9 +86,9 @@ def testPrompt(prompt: PromptDTO, args: list[Any], kwargs: dict[str, Any]):
   """
   fnLogger = EvaluatorLogger.getChild('testPrompt')
 
-  fnLogger.info(msg=f'Starting test for prompt: {prompt.id}', extra={ "inputs": kwargs })
+  fnLogger.info(msg=f'Starting test for prompt: {prompt.get("id")}', extra={ "inputs": kwargs })
 
-  template = ChatPromptTemplate.from_template(template=prompt.value)
+  template = ChatPromptTemplate.from_template(template=prompt.get('value'))
   fnLogger.debug('Validating Input', extra={ "keys": template.input_variables })
 
   validatePromptInput(template, kwargs)
@@ -108,7 +108,7 @@ def getPromptInputs(prompt: PromptDTO):
   positionalArgs: list[PromptArgument] = []
   keywordArgs: dict[str, PromptArgument] = {}
 
-  for (match, key, formatting) in re.findall(PROMPT_INPUT_REGEX, prompt.value):
+  for (match, key, formatting) in re.findall(PROMPT_INPUT_REGEX, prompt.get('value')):
     arg = PromptArgument(label=match, formatting=formatting)
 
     if (len(key) == 0):

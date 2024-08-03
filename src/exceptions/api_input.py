@@ -1,8 +1,6 @@
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
-from typing import Callable
+from src.exceptions.base import BaseCustomException, JSONResponse, Request, logException
 
-class ApiInputError(Exception):
+class ApiInputError(BaseCustomException):
   """
   Custom exception class for API input errors.  These will return a 400 to the caller
   """
@@ -44,9 +42,12 @@ def handleAPIInputException(
   _: Request,
   exception: ApiInputError
 ):
+  logException(exception)
+
   return JSONResponse(
     status_code=exception.status_code,
     content={
+       "error": exception.__class__.__name__,
        "message": exception.message,
        "details": exception.getDetails()
     }
