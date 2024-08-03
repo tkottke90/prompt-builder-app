@@ -64,6 +64,10 @@ def find(
   except sqlalchemy_query.IndexOutOfBoundsError as boundsErr:
     raise HTTPException(400, 'BadRequest: Query Exceeded the number of items')
 
+@router.get('/{prompt_id}', description="Get a prompt", name="Prompt Search")
+def getPromptById(prompt_id: int) -> PromptDTO:
+  return prompt_dao.getPrompt(prompt_id)
+
 @router.patch('/{prompt_id}', description="Update prompt details", name="Update Prompt")
 def update(prompt_id: int, prompt: UpdatePromptDTO):
   return addHatos([
