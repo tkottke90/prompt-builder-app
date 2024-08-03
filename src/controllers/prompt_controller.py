@@ -7,9 +7,6 @@ from src.utils import sqlalchemy_query, string_util, hateos_util
 from src.services import evaluator
 from typing import List
 import logging
-import traceback
-import sys
-import json
 
 controllerLogger = logging.getLogger('Controllers.PromptController')
 
