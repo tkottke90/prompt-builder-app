@@ -33,10 +33,10 @@ class EntityHasNoChangesError(EntityException):
     self.entityId = entityId
 
 def handleEntityException(
-  _: Request,
+  req: Request,
   exception: EntityException
 ):
-  logException(exception)
+  logException(exception, { "request_id": req.headers.get('request_id', 'missing') })
 
   return JSONResponse(
     status_code=exception.status_code,

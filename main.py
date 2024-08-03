@@ -3,7 +3,12 @@ from src import database
 from src.controllers import prompt_controller, root
 from src.logging import initializeLogger
 from src.exceptions import api_input, entity
+from src.middleware import http_logging
 import logging
+
+def setupMiddleware(app: FastAPI): {
+  app.add_middleware(http_logging.HttpLoggingMiddleware)
+}
 
 def setupExceptionHandlers(app: FastAPI):
   app.add_exception_handler(
@@ -24,6 +29,7 @@ def main(app: FastAPI):
   database.initialize()
   setupRouters(app)
   setupExceptionHandlers(app)
+  setupMiddleware(app)
 
 initializeLogger()
 appLogger = logging.getLogger('app')

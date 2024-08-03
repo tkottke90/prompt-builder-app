@@ -39,10 +39,10 @@ class MissingInputError(ApiInputError):
     
 
 def handleAPIInputException(
-  _: Request,
+  req: Request,
   exception: ApiInputError
 ):
-  logException(exception)
+  logException(req, exception)
 
   return JSONResponse(
     status_code=exception.status_code,
