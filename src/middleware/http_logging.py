@@ -31,6 +31,6 @@ class HttpLoggingMiddleware(BaseHTTPMiddleware):
     response = await call_next(request)
     
     duration = timerComplete()
-    reqLogger.info(f'Request completed in {duration} sec', extra={ "executionTime": { "value": duration, "units": 'sec' }, "request_id": requestIdStr })
+    reqLogger.info(f'Request completed in {duration} sec', extra={ "executionTime": { "value": duration, "units": 'sec' }, "request_id": request.state.request_id })
 
     return response
