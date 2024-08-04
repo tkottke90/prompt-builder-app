@@ -55,9 +55,9 @@ association_table = Table(
 class PromptTable(Base_Table):
   __tablename__ = "prompts"
 
-  value = mapped_column(String, nullable=False)
-  label = mapped_column(String, nullable=False, index=True)
-  tags = mapped_column(String, default="")
+  value: Mapped[String] = mapped_column(String, nullable=False)
+  label: Mapped[String] = mapped_column(String, nullable=False, index=True)
+  tags: Mapped[String] = mapped_column(String, default="")
   versions: Mapped[List["PromptVersionTable"]] = relationship(secondary=association_table)
 
   def toDTO(self):

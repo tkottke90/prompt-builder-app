@@ -27,10 +27,9 @@ class HttpLoggingMiddleware(BaseHTTPMiddleware):
 
     reqLogger.info(f'HTTP {request.method} {request.url}', extra={ "request_id": request.state.request_id, "timestamp": datetime.now().isoformat() })
 
-    # process the request and get the response    
     response = await call_next(request)
     
     duration = timerComplete()
-    reqLogger.info(f'Request completed in {duration} sec', extra={ "executionTime": { "value": duration, "units": 'sec' }, "request_id": request.state.request_id })
+    reqLogger.info(f'Request completed in {duration} sec', extra={ "executionTime": { "value": duration, "units": 'sec' }, "request_id": request.state.request_id, "status_code": response.status_code })
 
     return response

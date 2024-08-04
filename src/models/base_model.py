@@ -1,5 +1,5 @@
 from sqlalchemy import Integer, DateTime
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.types import DateTime
 from datetime import datetime, UTC
@@ -11,9 +11,9 @@ class Base(DeclarativeBase):
 class Base_Table(Base):
   __abstract__ = True
 
-  id = mapped_column(Integer, primary_key=True, autoincrement="auto", unique=True)
-  createdAt = mapped_column(DateTime(), default=lambda _: datetime.now(UTC)) 
-  updatedAt = mapped_column(DateTime(), default=datetime.now(UTC), onupdate=lambda _: datetime.now(UTC))
+  id: Mapped[Integer] = mapped_column(Integer, primary_key=True, autoincrement="auto", unique=True)
+  createdAt: Mapped[DateTime] = mapped_column(DateTime(), default=lambda _: datetime.now(UTC)) 
+  updatedAt: Mapped[DateTime] = mapped_column(DateTime(), default=datetime.now(UTC), onupdate=lambda _: datetime.now(UTC))
 
   def toPersistance(self, dto: BaseModel):
     def filterFn(member: str):

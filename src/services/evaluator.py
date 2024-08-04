@@ -9,6 +9,9 @@ import json
 import logging
 import re
 
+def formatInstructions(schemas: list[ResponseSchema]):
+  return StructuredOutputParser.from_response_schemas(schemas).get_format_instructions()
+
 PROMPT_INPUT_REGEX = re.compile('(\{([^!:}]*)(?:[:!]?([^}]*))?\})', re.DOTALL)
 
 EvaluatorLogger = logging.getLogger('Evaluator')
@@ -44,7 +47,7 @@ def scoreGeneration(prompt: str, generation: str):
       "format_instructions": StructuredOutputParser.from_response_schemas([
         ResponseSchema(name="score", description="a grading between 0 and 10 of how well the template performed", type="float"),
         ResponseSchema(name="score_explanation", description="a description of why the response received that score"),
-      ])
+      ]).get_format_instructions()
     },
     template=
 """# Instructions
@@ -70,14 +73,15 @@ You should respond using the following format:
 
   chain = template | scoreLLM
 
-  EvaluatorLogger.info(msg=f'Starting test for prompt')
+  EvaluatorLogger.info(msg=f'Starting test for prompt', extra={ "prompt": template.format(template="", generation="") })
 
   result = chain.invoke(input={ "template": prompt, "generation": generation })
   data = json.loads(result.content)
 
   return {
     "score": data.get('score', -1),
-    "score_explanation": data.get('score_explanation', 'Missing Explanation')
+    "score_explanation": data.get('score_explanation', 'Missing Explanation'),
+    "token_usage": scoreLLM.get_num_tokens(prompt)
   }
 
 def testPrompt(prompt: PromptDTO, args: list[Any], kwargs: dict[str, Any]):
@@ -85,7 +89,6 @@ def testPrompt(prompt: PromptDTO, args: list[Any], kwargs: dict[str, Any]):
   Call LLM using a provided prompt and return the results of that prompt
   """
   fnLogger = EvaluatorLogger.getChild('testPrompt')
-
   fnLogger.info(msg=f'Starting test for prompt: {prompt.get("id")}', extra={ "inputs": kwargs })
 
   template = ChatPromptTemplate.from_template(template=prompt.get('value'))
