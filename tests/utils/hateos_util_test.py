@@ -1,4 +1,5 @@
 from src.utils import hateos_util
+import pytest
 
 class TestMetadataPopulator():
   """
@@ -7,7 +8,7 @@ class TestMetadataPopulator():
 
   def test_string_value(self):
     """
-    An attribute should be added with a string value when passed
+    An attribute should be added with a string value when passed a dict[str, str]
     """ 
     # Arrange
     existingObject = { "id": 1 }
@@ -25,7 +26,7 @@ class TestMetadataPopulator():
 
   def test_callable_value(self):
     """
-    An attribute should be added with a string value when passed
+    An attribute should be added with a string value when passed a dict[str, Callable]
     """ 
     # Arrange
     existingObject = { "id": 1 }
@@ -63,34 +64,93 @@ class TestMetadataPopulator():
     assert existingObject.get('index') == 'user-1'
     assert existingObject.get('status') == 'Under-Review'
 
-class TestHateosSelfPopulator():
-  """
-  Tests the #caseInsensitiveMatch() function
-  """
-
-  def test_one(self):
+  def test_nested(self):
     """
-    
+    An attribute should be added with a string value when passed a nested string value
     """ 
     # Arrange
+    existingObject = { "id": 1 }
+    newItem = {
+      "links": {
+        "knowledge_base": "https://example.com/kb"
+      }
+    }
 
     # Act
+    hateos_util.metadataPopulator(
+      existingObject,
+      newItem
+    )
 
     # Assert
-    assert True == True
+    assert existingObject.get('id') == 1 # Existing key is retained
+    assert existingObject['links']['knowledge_base'] == newItem['links']['knowledge_base']
+
+  def test_nested_callable(self):
+    """
+    An attribute should be added with a string value when passed a nested string value
+    """ 
+    # Arrange
+    existingObject = { "id": 1 }
+    newItem = {
+      "links": {
+        "knowledge_base": lambda record: f'https://example.com/kb/{record.get("id")}'
+      }
+    }
+
+    # Act
+    hateos_util.metadataPopulator(
+      existingObject,
+      newItem
+    )
+
+    # Assert
+    assert existingObject.get('id') == 1 # Existing key is retained
+    assert existingObject['links']['knowledge_base'] == 'https://example.com/kb/1'
+
+class TestHateosSelfPopulator():
+  """
+  Tests the #hateosSelfPopulator() function
+  """
+
+  def test_add_self(self):
+    """
+    Should add a `self` property to the provided dict
+    """ 
+    # Arrange
+    person = { "id": 1, "displayName": "John Smith" }
+
+    # Act
+    hateos_util.hateosSelfPopulator(person, '/person')
+
+    # Assert
+    assert person.get('self') == '/person/1'
+
+  def test_missing_key(self):
+    """
+    Should throw a KeyError when the key doesn't exist in the provided object
+    """
+    # Arrange
+    with pytest.raises(KeyError):
+      person = { "id": 1, "displayName": "John Smith" }
+
+      # Act
+      hateos_util.hateosSelfPopulator(person, '/person', 'index')
 
 class TestHateosParentPopulator():
   """
-  Tests the #caseInsensitiveMatch() function
+  Tests the #hateosParentPopulator() function
   """
 
   def test_one(self):
     """
-    
+    Should add a `parent` property to the provided dict
     """ 
     # Arrange
+    person = { "id": 1, "displayName": "John Smith" }
 
     # Act
+    hateos_util.hateosParentPopulator(person, '/person')
 
     # Assert
-    assert True == True
+    assert person.get('parent') == '/person'

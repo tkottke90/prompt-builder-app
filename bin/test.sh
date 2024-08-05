@@ -3,4 +3,4 @@
 cd $(dirname $0)
 cd ../..
 
-python -m pytest tests/
+python -m pytest --cov=src tests/

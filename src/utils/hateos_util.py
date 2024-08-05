@@ -1,16 +1,21 @@
-from typing import Callable, Dict, TypeVar, Union
+from typing import Callable, Dict, TypeVar, Any
 
 T = TypeVar('T')
 
-MappingAction = str | Callable[[T], str]
+MappingAction = str | Callable[[T], str] | Dict[str, Any]
 Mapping = Dict[str, MappingAction]
 
 def metadataPopulator(data: T, mapping: Mapping):
-  def executeAction(data: T, action: MappingAction):
-    if (isinstance(action, str)):
-      return action
+  def executeAction(record: T, action: MappingAction):
+    if (isinstance(action, Callable)):
+      return action(record)
+    elif (isinstance(action, dict)):
+      return {
+        key: executeAction(record, childAction)
+        for key,childAction in action.items()
+      }
     else:
-      return action(data)
+      return action
 
   data.update({
     key: executeAction(data, action)
@@ -24,7 +29,7 @@ def hateosSelfPopulator(data: T, rootPath: str, key: str = 'id'):
   return metadataPopulator(
     data,
     {
-      "self": lambda record: f"{rootPath}/{record.get(key)}"
+      "self": lambda record: f"{rootPath}/{record[key]}"
     }
   )
 
