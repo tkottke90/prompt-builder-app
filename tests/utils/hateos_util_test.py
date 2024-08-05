@@ -142,7 +142,7 @@ class TestHateosParentPopulator():
   Tests the #hateosParentPopulator() function
   """
 
-  def test_one(self):
+  def test_parent_population(self):
     """
     Should add a `parent` property to the provided dict
     """ 
