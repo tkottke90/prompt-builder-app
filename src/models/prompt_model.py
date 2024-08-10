@@ -79,9 +79,9 @@ class PromptTable(Base_Table):
     }
   
   def toPersistance(self, dto: PromptDTO):
-    if (dto.tags is not None):
-      self.tags = ','.join(dto.tags)
-      dto.tags = None
+    if (dto.get('tags', None) is not None):
+      self.tags = ','.join(dto.get('tags'))
+      dto.update({ "tags": None })
 
     super().toPersistance(dto)
 

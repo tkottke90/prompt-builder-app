@@ -5,3 +5,4 @@ var/
 
 # Tests
 .coverage
+htmlcov
