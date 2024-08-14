@@ -19,8 +19,6 @@ class UpdatePromptDTO(CreatePromptDTO):
   value: Optional[str] = None
   tags: Optional[list[str]] = None
 
-
-
 class PromptQuery(BaseModel):
   value: Optional[str | query_params.StringFieldQueryModel] = None
   label: Optional[str | query_params.StringFieldQueryModel] = None
@@ -31,8 +29,8 @@ class PromptQuery(BaseModel):
 
 class PromptVersionDTO(Base_DTO):
   prompt: str
-  previous: str
-  next: str
+  previous: Optional[str]
+  next: Optional[str]
   comments: str
 
 class UpdatePromptVersionDTO(BaseModel):
@@ -43,7 +41,6 @@ class UpdatePromptVersionDTO(BaseModel):
 
 class PromptDTO(Base_DTO, CreatePromptDTO):
   versions: list[PromptVersionDTO]
-  deletedAt: str
 
 association_table = Table(
     "prompt_versions",
@@ -60,7 +57,7 @@ class PromptTable(Base_Table):
   tags: Mapped[String] = mapped_column(String, default="")
   versions: Mapped[List["PromptVersionTable"]] = relationship(secondary=association_table)
 
-  def toDTO(self):
+  def toDTO(self) -> PromptDTO:
     versions = self.versions
     current = string_util.checksum(self.value)
     last = string_util.checksum(versions[-1].prompt)
@@ -72,17 +69,22 @@ class PromptTable(Base_Table):
       "value": self.value,
       "label": self.label,
       "tags": self.tags.split(',') if self.tags is not None else [],
-      "createdAt": self.createdAt,
-      "updatedAt": self.updatedAt,
+      "createdAt": self.createdAt.isoformat(),
+      "updatedAt": self.updatedAt.isoformat(),
       "versions": versionDTOs[-5 if len(versions) > 5 else -1 * len(versions)::],
       "hasChanges": current != last
     }
   
   def toPersistance(self, dto: PromptDTO):
-    if (dto.get('tags', None) is not None):
-      self.tags = ','.join(dto.get('tags'))
-      dto.update({ "tags": None })
+    # The DTO stores tags as a string array but we store it in
+    # the database as a string.  So before passing it to the 
+    # base model, we first do the transform
+    tags = getattr(dto, 'tags', None);
+    if (tags is not None):
+      self.tags = ','.join(tags)
+      setattr(dto, 'tags', None)
 
+    # Base model handles the majority of primitive storage steps
     super().toPersistance(dto)
 
 
@@ -104,6 +106,6 @@ class PromptVersionTable(Base_Table):
       "comments": self.comments,
       "previous": self.previous,
       "next": self.next,
-      "createdAt": self.createdAt,
-      "updatedAt": self.updatedAt
+      "createdAt": self.createdAt.isoformat(),
+      "updatedAt": self.updatedAt.isoformat()
     }

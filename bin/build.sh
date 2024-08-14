@@ -10,6 +10,7 @@ VERBOSE=0
 
 while getopts ":vs:r:t:u:" opt; do
   case $opt in
+    h) usage;;
     r) REGISTRY="$OPTARG" ;;
     s) SKIP=1 ;;
     t) TAG="$OPTARG" ;;
@@ -21,7 +22,7 @@ done
 
 # Define the usage function
 usage() {
-  echo "Usage: $(basename $0) [-v|--verbose] [-r|--registry <registry>] [-u|--repository <repository>]" >&2
+  echo "Usage: $(basename $0) [-s] [-v|--verbose] [-r|--registry <registry>] [-u|--repository <repository>]" >&2
   exit 0
 }
 
