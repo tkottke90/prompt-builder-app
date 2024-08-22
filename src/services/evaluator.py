@@ -4,10 +4,13 @@ from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from pydantic import BaseModel, Field
 from src.models.prompt_model import PromptDTO
 from src.exceptions import api_input
+from src.utils import ollama_util
 from typing import Any
 import json
 import logging
 import re
+
+from src.utils import prompt_util
 
 def formatInstructions(schemas: list[ResponseSchema]):
   return StructuredOutputParser.from_response_schemas(schemas).get_format_instructions()
@@ -42,15 +45,12 @@ def validatePromptInput(prompt: ChatPromptTemplate, input: dict):
     ) 
 
 def scoreGeneration(prompt: str, generation: str):
-  template = ChatPromptTemplate.from_template(
-    partial_variables={
-      "format_instructions": StructuredOutputParser.from_response_schemas([
-        ResponseSchema(name="score", description="a grading between 0 and 10 of how well the template performed", type="float"),
-        ResponseSchema(name="score_explanation", description="a description of why the response received that score"),
-      ]).get_format_instructions()
-    },
-    template=
-"""# Instructions
+  template = prompt_util.createPromptWithFormat(
+    schema=[
+      ResponseSchema(name="score", description="a grading between 0 and 10 of how well the llm responds to the humans request", type="float"),
+      ResponseSchema(name="score_explanation", description="a description of why the response received that score"),
+    ],
+    prompt="""# Instructions
 You are an AI Assistant specializing in Generative AI using Natural Language.
 You task is to evaluate the following LLM Prompt Template and LLM Response and provide feedback to the template author to assist them in generating an effective prompt for LLM driven applications.
 Use the step by step program provided below to evaluate Prompt Template and Generated Response.
@@ -60,7 +60,7 @@ You should respond using the following format:
 
 {format_instructions}
 
-## LLM Prompt Template
+## Human Request
 {template}
 
 ## LLM Response
@@ -69,19 +69,19 @@ You should respond using the following format:
 # Program
 1. generate a score between 0 and 10 of how well the Generated Response responded to the Prompt Template
 2. explain why this score was given based on your analysis 
-""")
-
-  chain = template | scoreLLM
+"""
+  )
 
   EvaluatorLogger.info(msg=f'Starting test for prompt', extra={ "prompt": template.format(template="", generation="") })
 
-  result = chain.invoke(input={ "template": prompt, "generation": generation })
-  data = json.loads(result.content)
+  result = ollama_util.jsonChat(template, options={ 'temperature': 0.1 }).invoke(input={ "template": prompt, "generation": generation })
+  response = result.get('response')
+  tokens = result.get('tokens')
 
   return {
-    "score": data.get('score', -1),
-    "score_explanation": data.get('score_explanation', 'Missing Explanation'),
-    "token_usage": scoreLLM.get_num_tokens(prompt)
+    "score": response.get('score', -1),
+    "score_explanation": response.get('score_explanation', 'Missing Explanation'),
+    "token_usage": tokens
   }
 
 def testPrompt(prompt: PromptDTO, args: list[Any], kwargs: dict[str, Any]):
