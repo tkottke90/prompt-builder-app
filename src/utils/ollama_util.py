@@ -1,23 +1,25 @@
 from langchain_community.chat_models.ollama import ChatOllama
-from langchain_core.runnables import Runnable, RunnableLambda, RunnableParallel
-from typing import TypedDict
+from langchain_core.runnables import Runnable, RunnableLambda, RunnableParallel, RunnableSerializable
+from typing import Any, TypedDict, TypeVar
 import json
 
-class OllamaChatResponse(TypedDict):
+class OllamaJsonChatResponse(TypedDict):
   response: dict
+  tokens: int
 
 class JsonChatOptions(TypedDict):
   model: str
   temperature: float
 
-def chat(template: Runnable, **options: JsonChatOptions) -> Runnable:
+def chat(template: Runnable, **options: JsonChatOptions):
   llm = ChatOllama(
     model=options.get('model') or 'mistral:7b',
-    temperature=options.get('temperature') or 0.0,
-    format="json"
+    temperature=options.get('temperature') or 0.0
   )
 
-def jsonChat(template: Runnable, **options: JsonChatOptions) -> Runnable:
+  return template | llm
+
+def jsonChat(template: Runnable, **options: JsonChatOptions) -> RunnableSerializable[Any, OllamaJsonChatResponse]:
   llm = ChatOllama(
     model=options.get('model') or 'mistral:7b',
     temperature=options.get('temperature') or 0.0,

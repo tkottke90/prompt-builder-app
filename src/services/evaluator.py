@@ -9,11 +9,7 @@ from typing import Any
 import json
 import logging
 import re
-
 from src.utils import prompt_util
-
-def formatInstructions(schemas: list[ResponseSchema]):
-  return StructuredOutputParser.from_response_schemas(schemas).get_format_instructions()
 
 PROMPT_INPUT_REGEX = re.compile('(\{([^!:}]*)(?:[:!]?([^}]*))?\})', re.DOTALL)
 
@@ -22,12 +18,6 @@ EvaluatorLogger = logging.getLogger('Evaluator')
 testllm = ChatOllama(
   model="mistral:7b",
   temperature=0.1
-)
-
-scoreLLM = ChatOllama(
-  model="mistral:7b",
-  temperature=0.0,
-  format="json"
 )
 
 class PromptArgument(BaseModel):
