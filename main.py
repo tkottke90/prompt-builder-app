@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from src import database
 from src.controllers import prompt_controller, root
@@ -46,4 +47,5 @@ app = FastAPI(
 )
 
 if __name__ == "main":
+  load_dotenv()
   main(app) 
