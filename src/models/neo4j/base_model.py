@@ -35,16 +35,17 @@ class Neo4JBaseDao(BaseModel):
     for key, value in properties.__dict__.items():
       if (value is None):
         continue
-      
+
       queryValue = f'${key}'
-
-      if (isinstance(queryValue, (int, float))):
-        queryValue = queryValue
-
-      if (isinstance(queryValue, bool)):
-        queryValue = 'true' if queryValue is True else 'false'
-
-      conditions.append(f'{variableName}.{key} = {queryValue}')
+      
+      # This is a special case because the id is less a property in Neo4j and more
+      # metadata on a node.  For this reason we cannot simply check for the value
+      # using equality
+      if (key == 'id'):
+        conditions.append(f'id({variableName}) = {queryValue}')
+      else:
+        conditions.append(f'{variableName}.{key} = {queryValue}')
+      
       params.update({ key: value })
 
     return ' AND '.join(conditions), params
