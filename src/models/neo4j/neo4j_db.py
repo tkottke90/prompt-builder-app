@@ -2,16 +2,20 @@ import os
 import functools
 from langchain_core.embeddings import Embeddings
 from langchain_community.chat_message_histories import Neo4jChatMessageHistory
-from langchain.graphs.neo4j_graph import Neo4jGraph
-from langchain.vectorstores.neo4j_vector import Neo4jVector
-from typing import Protocol, Optional
-from logging import Logger
+from langchain_community.graphs import Neo4jGraph
+from langchain_community.vectorstores import Neo4jVector
+from typing import Dict, List, Protocol, Optional
+from logging import Logger, getLogger
 
-NEO4J_USERNAME = os.environ.get('NEO4J_USERNAME')
-NEO4J_PASSWORD = os.environ.get('NEO4J_PASSWORD')
-NEO4J_URL = os.environ.get('NEO4J_URL')
-NEO4J_DB = os.environ.get('NEO4J_DB')
 
+
+neo4jLogger = getLogger('Neo4J_DB');
+neo4jLogger.setLevel('DEBUG')
+
+NEO4J_USERNAME = os.getenv('NEO4J_USERNAME')
+NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
+NEO4J_URL = os.getenv('NEO4J_URL')
+NEO4J_DB = os.getenv('NEO4J_DB')
 
 class VectorDBOptions(Protocol):
   keyword_index_name: Optional[str]
@@ -53,3 +57,30 @@ def getChatHistory(userSessionId: str, **kwargs: ChatHistoryOptions):
     password=NEO4J_PASSWORD,
     **kwargs
   )
+
+def parseResponse(response: List[Dict]):
+  records = [];
+
+  for result in response:
+      record = dict()
+      for value in result.values():
+        record.update(value)
+
+      records.append(record)
+
+  return records
+
+def query():
+  def functionWrapper(fn):
+    def executionWrapper(*args, **kwargs):
+      db = getGraphDB()
+
+      queryStr, paramsDict = fn(*args, **kwargs)
+
+      neo4jLogger.debug('Querying Neo4jDB', extra={ "query": queryStr, "params": paramsDict })
+
+
+      return parseResponse(db.query(queryStr, paramsDict))
+
+    return executionWrapper
+  return functionWrapper
