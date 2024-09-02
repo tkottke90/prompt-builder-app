@@ -2,6 +2,7 @@ __pycache__
 
 var/
 .venv/
+.env
 
 # Tests
 .coverage
