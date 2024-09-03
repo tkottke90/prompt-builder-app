@@ -1,5 +1,6 @@
 import datetime
 import json
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 from .neo4j_db import query
@@ -19,6 +20,11 @@ class Neo4JSchema():
   createdAt: datetime.datetime = field(default_factory=datetime.datetime.now)
   updatedAt: datetime.datetime = field(default_factory=datetime.datetime.now)
 
+@dataclass
+class Neo4jNodeDetails:
+  id: Optional[str]
+  labels: Optional[List[str]]
+
 
 class Neo4JBaseDao(BaseModel):
   _nodeType: str
@@ -28,11 +34,11 @@ class Neo4JBaseDao(BaseModel):
 
     self._nodeType = name
 
-  def _createConditional(self, variableName: str, properties: Neo4JSchema):
+  def _createConditional(self, variableName: str, properties: Dict):
     conditions = list()
     params = dict()
     
-    for key, value in properties.__dict__.items():
+    for key, value in properties.items():
       if (value is None):
         continue
 
@@ -56,7 +62,7 @@ class Neo4JBaseDao(BaseModel):
 
     return queryVarName, f'({queryVarName}:{nodeType})'
 
-  def _createParams(self, properties: Neo4JSchema):
+  def _createParams(self, properties: Dict):
     """
     Utility function to create parameter strings for Cypher queries and a matching parameter dict.
       This helps guard db queries by using the driver and database protections for query injection by paramaterizeing the records
@@ -69,7 +75,7 @@ class Neo4JBaseDao(BaseModel):
     """
     placeholders = dict()
 
-    for key,_ in properties.__dict__.items():
+    for key,_ in properties.items():
       placeholders.update({ key: f'${key}' })
 
     return json.dumps(placeholders).replace('"', '')
@@ -98,10 +104,10 @@ class Neo4JBaseDao(BaseModel):
     return elementKey + r'{' + ', '.join(selectKeys) + ', ' + idSetter + r'}'
 
   @query()
-  def findNode(self, queryParams: Neo4JSchema):
+  def findNode(self, queryParams: BaseDataClass):
     operator = 'MATCH'
     queryVariableName, targetStr = self._createNodeNotation()
-    conditions, params = self._createConditional(queryVariableName, queryParams)
+    conditions, params = self._createConditional(queryVariableName, queryParams.getProperties())
 
     returnStr = self._createReturnStr(queryVariableName)
     queryStr = f'{operator} {targetStr} WHERE {conditions} RETURN {returnStr}'
@@ -111,7 +117,9 @@ class Neo4JBaseDao(BaseModel):
   @query()
   def createNode(self, node: BaseDataClass):
     operator = 'CREATE'
-    paramStr = self._createParams(node)
+    node.__setattr__('createdAt', datetime.datetime.now().isoformat())
+    node.__setattr__('updatedAt', datetime.datetime.now().isoformat())
+    paramStr = self._createParams(node.getProperties())
 
     returnStr = self._createReturnStr('n')
     queryStr = f'{operator} (n:{self._nodeType} {paramStr}) RETURN {returnStr};'
@@ -119,13 +127,29 @@ class Neo4JBaseDao(BaseModel):
     return queryStr, node.getProperties()
 
   @query()
+  def getNodeById(self, id: int):
+    raise NotImplementedError('Not Implemented: getNodeById')
+
+  @query()
+  def getNodeLabels(self, id: int):
+    operator = 'MATCH'
+    
+    conditions, params = self._createConditional('n', { "id": id })
+
+    returnStr = r'{ id: id(n), labels: labels(n) }'
+    queryStr = f'{operator} (n:{self._nodeType}) WHERE {conditions} RETURN {returnStr};'
+
+    print(queryStr, params)
+
+    return queryStr, params
+
+  @query()
   def createOrUpdate(self, node: BaseDataClass):
+    node.__setattr__('updatedAt', datetime.datetime.now().isoformat())
     raise NotImplementedError('Not Implemented: createOrUpdate')
   
   @query()
   def update(self, node: BaseDataClass):
-    
-    
     raise NotImplementedError('Not Implemented: update')
 
   @query()

@@ -78,9 +78,8 @@ def query():
       queryStr, paramsDict = fn(*args, **kwargs)
 
       neo4jLogger.debug('Querying Neo4jDB', extra={ "query": queryStr, "params": paramsDict })
-
-
-      return parseResponse(db.query(queryStr, paramsDict))
+      result = db.query(queryStr, paramsDict)
+      return parseResponse(result)
 
     return executionWrapper
   return functionWrapper
