@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI
 from src import database
 from src.controllers import prompt_controller, root
@@ -6,6 +6,8 @@ from src.logging import initializeLogger
 from src.exceptions import api_input, entity
 from src.middleware import http_logging
 import logging
+
+load_dotenv(find_dotenv())
 
 def setupMiddleware(app: FastAPI): {
   app.add_middleware(http_logging.HttpLoggingMiddleware)
@@ -47,5 +49,4 @@ app = FastAPI(
 )
 
 if __name__ == "main":
-  load_dotenv()
   main(app) 

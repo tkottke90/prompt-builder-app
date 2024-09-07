@@ -7,8 +7,6 @@ from langchain_community.vectorstores import Neo4jVector
 from typing import Dict, List, Protocol, Optional
 from logging import Logger, getLogger
 
-
-
 neo4jLogger = getLogger('Neo4J_DB');
 neo4jLogger.setLevel('DEBUG')
 
@@ -30,6 +28,8 @@ class ChatHistoryOptions(Protocol):
 
 @functools.cache
 def getGraphDB():
+  print(os.getenv('NEO4J_URL'))
+
   return Neo4jGraph(
     url=NEO4J_URL,
     database=NEO4J_DB,
