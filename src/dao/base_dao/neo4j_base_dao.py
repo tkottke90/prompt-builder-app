@@ -178,10 +178,6 @@ class Neo4JBaseDao(BaseModel, Generic[EdgeModel]):
     result = self._queryDatabase(queryStr, params)
 
     return self._parseResults('n', result[0])
-
-  def createOrUpdate(self, node: Neo4jBaseModel):
-    node.__setattr__('updatedAt', datetime.datetime.now().isoformat())
-    raise NotImplementedError('Not Implemented: createOrUpdate')
   
   def delete(self, node: Neo4jBaseModel):
     raise NotImplementedError('Not Implemented: delete')
