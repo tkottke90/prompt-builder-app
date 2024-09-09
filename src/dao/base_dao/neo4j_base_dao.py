@@ -132,6 +132,8 @@ class Neo4JBaseDao(BaseModel, Generic[EdgeModel]):
   def _queryDatabase(self, queryStr: str, params: Dict):
     db = getGraphDB()
 
+    print(db)
+
     return db.query(queryStr, params)
 
   def findNode(self, queryParams: Neo4jBaseModel) -> List[Dict]:

@@ -142,7 +142,7 @@ class TestMethod_Create_Return_String():
 
 class TestMethod_Parse_Results():
   
-  def test_should_return_value_in_response(self):
+  def test_should_return_the_matching_value_in_response(self):
     # Arrange
     mockSchemaName = 'Test'
     mockData = dict(n=dict(
@@ -170,48 +170,3 @@ class TestMethod_Parse_Results():
     except Exception as e:
       # Assert
       assert isinstance(e, KeyError)
-
-class TestMethod_Find_Node():
-  ...
-  # def test_should(self):
-  #   # Arrange
-
-  #   # Act
-
-  #   # Assert
-
-class TestMethod_Create_Node():
-  ...
-  # def test_should(self):
-  #   # Arrange
-
-  #   # Act
-
-  #   # Assert
-
-class TestMethod_Get_Node_By_Id():
-  ...
-  # def test_should(self):
-  #   # Arrange
-
-  #   # Act
-
-  #   # Assert
-
-class TestMethod_Update_Node():
-  ...
-  # def test_should(self):
-  #   # Arrange
-
-  #   # Act
-
-  #   # Assert
-
-class TestMethod_Delete_Node():
-  ...
-  # def test_should(self):
-  #   # Arrange
-
-  #   # Act
-
-  #   # Assert

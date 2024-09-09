@@ -26,7 +26,7 @@ class VectorDBOptions(Protocol):
 class ChatHistoryOptions(Protocol):
   node_label: Optional[str]
 
-@functools.cache
+# @functools.cache
 def getGraphDB():
   print(os.getenv('NEO4J_URL'))
 
