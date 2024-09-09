@@ -86,6 +86,6 @@ class TestPromptVersionTable():
       "comments": '',
       "previous": '',
       "next": '',
-      "createdAt": version.createdAt,
-      "updatedAt": version.createdAt
+      "createdAt": version.createdAt.isoformat(),
+      "updatedAt": version.createdAt.isoformat()
     }
